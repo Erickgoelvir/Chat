@@ -1,0 +1,4 @@
+/home/erick/Proyectos/chat/cmake-build-debug/CMakeFiles/servidor.dir
+/home/erick/Proyectos/chat/cmake-build-debug/CMakeFiles/cliente.dir
+/home/erick/Proyectos/chat/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/erick/Proyectos/chat/cmake-build-debug/CMakeFiles/rebuild_cache.dir
