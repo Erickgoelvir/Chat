@@ -123,6 +123,16 @@ int main(void) {
     //Actualizar estado
     actualizar_estado(0);
 
+    //Limpiar archivos de registro de usuarios
+    FILE *usuarion_bin = fopen("../data/usuarios.bin", "wb");
+    FILE *usuarios_txt = fopen("../data/usuarios.txt", "w");
+    if (usuarion_bin == NULL || usuarios_txt == NULL) {
+        perror("Error al abrir usuarios\n");
+    } else {
+        fclose(usuarion_bin);
+        fclose(usuarios_txt);
+    }
+
     //Agregar salida al chat.log
     char log_salida[50];
     snprintf(log_salida, sizeof(log_salida), "[SERVIDOR] OFF | %s\n", obtener_fecha());
