@@ -94,6 +94,12 @@ build CMakeFiles/cliente.dir/src/cliente.c.o: C_COMPILER__cliente_unscanned_Debu
   OBJECT_DIR = CMakeFiles/cliente.dir
   OBJECT_FILE_DIR = CMakeFiles/cliente.dir/src
 
+build CMakeFiles/cliente.dir/src/funciones_servidor.c.o: C_COMPILER__cliente_unscanned_Debug /home/erick/Proyectos/chat/src/funciones_servidor.c || cmake_object_order_depends_target_cliente
+  DEP_FILE = CMakeFiles/cliente.dir/src/funciones_servidor.c.o.d
+  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/cliente.dir
+  OBJECT_FILE_DIR = CMakeFiles/cliente.dir/src
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target cliente
@@ -102,7 +108,7 @@ build CMakeFiles/cliente.dir/src/cliente.c.o: C_COMPILER__cliente_unscanned_Debu
 #############################################
 # Link the executable cliente
 
-build cliente: C_EXECUTABLE_LINKER__cliente_Debug CMakeFiles/cliente.dir/src/cliente.c.o
+build cliente: C_EXECUTABLE_LINKER__cliente_Debug CMakeFiles/cliente.dir/src/cliente.c.o CMakeFiles/cliente.dir/src/funciones_servidor.c.o
   DEP_FILE = CMakeFiles/cliente.dir/link.d
   FLAGS = -g
   LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/cliente.dir/link.d

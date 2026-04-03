@@ -28,9 +28,6 @@ void manejar_sigint(int sig);
 //Actualizar estado del servidor
 void actualizar_estado(int);
 
-//Variable para detener los hilos y proceso hijo
-extern int detener;
-
 
 //Function obtener fecha y hora
 char* obtener_fecha();
@@ -49,10 +46,7 @@ void escribir_fifo(int pid, const char *mensaje);
 
 //Function controladora de los hilos que atienden al usuario
 void* atender_cliente(void *arg);
-
-//numero de hilos creados para atender a usuarios
-extern pthread_t hilos[];
-extern int id[];
+void detener_hilos();
 
 //Mensaje de salida
 void mensaje_salida();

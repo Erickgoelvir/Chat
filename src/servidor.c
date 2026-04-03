@@ -33,7 +33,7 @@ int main(void) {
     signal(SIGINT, manejar_sigint);
 
     //iniciar variable Detener
-    detener = 1;
+    //int detener = 1;
 
     //Bajo ninguna circunstancia tocar esta variable, hace cosas importantes
     int i = 0;
@@ -58,7 +58,7 @@ int main(void) {
 
         //Crear y abri FIFO de login (común para todos los clientes)
         if (mkfifo("../data/login/login_requests", 0666) == -1) {perror("Error makefifo\n"); return 1;}
-        int login_request = open("../data/login/login_requests", O_RDONLY  | O_NONBLOCK);
+        int login_request = open("../data/login/login_requests", O_RDONLY  /*| O_NONBLOCK*/);
         if (login_request == -1) {perror("Error al abrir login_requests\n"); return 1;}
 
         printf("[PORTERO] Esperando conexiones...\n");
@@ -102,15 +102,15 @@ int main(void) {
     }
 
     //Detener los hilos que atienden a los clientes, y el subproceso login
-    detener = 0;
+    detener_hilos();
+
+    //Mensaje de salida a todos los usuarios
+    mensaje_salida();
 
     //Esperando a los hilos
     for (int j = 0; j < i; j++) {
         pthread_join(hilos[j], NULL);
     }
-
-    //Mensaje de salida a todos los usuarios
-    mensaje_salida();
 
     //esperar que se reciba el mensaje
     sleep(3);
@@ -119,7 +119,6 @@ int main(void) {
     eliminar_fifos();
 
     //Esperando al proceso hijo
-    //kill(pid, SIGTERM); No se
     waitpid(pid, NULL, 0);
 
     //Destruir mutex

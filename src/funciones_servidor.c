@@ -1,8 +1,8 @@
 //
 // Created by erick on 3/28/26.
 //
-#include "headers/funciones_servidor.h"
-
+#include "./headers/funciones_servidor.h"
+#include "./headers/servidor.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <time.h>
@@ -144,6 +144,11 @@ void escribir_fifo(const int pid, const char *mensaje) {
     pthread_mutex_unlock(&bloquear_fifo);
 }
 
+int detener = 1;
+void detener_hilos() {
+    detener = 0;
+}
+
 //Function controladora de los hilos que atienden al usuario
 void *atender_cliente(void *arg) {
     datos_login* cliente = (datos_login*)arg;
@@ -161,7 +166,7 @@ void *atender_cliente(void *arg) {
         ssize_t n = read(fd, &operacion, sizeof(datos_operacion));
         if (n > 0) {
 
-            if (strcmp(operacion.comando, "usuarios") == 0) {
+            if (strcmp(operacion.comando, "/usuarios") == 0) {
 
                 datos_login registro;
                 char buffer[1024];
@@ -173,7 +178,7 @@ void *atender_cliente(void *arg) {
                 }
                 escribir_fifo(cliente->pid, buffer);
 
-            } else if (strcmp(operacion.comando, "privado") == 0) {
+            } else if (strcmp(operacion.comando, "/privado") == 0) {
 
                 datos_login registro;
                 pid_t pid_encontrado = -1;
@@ -198,7 +203,7 @@ void *atender_cliente(void *arg) {
                     escribir_txt("../data/chat.log", mensaje);
                 }
 
-            } else if (strcmp(operacion.comando, "global") == 0) {
+            } else if (strcmp(operacion.comando, "/global") == 0) {
 
                 datos_login registro;
                 char mensaje[100];
@@ -209,7 +214,7 @@ void *atender_cliente(void *arg) {
                 }
                 escribir_txt("../data/chat.log", mensaje);
 
-            } else if (strcmp(operacion.comando, "salir") == 0) {
+            } else if (strcmp(operacion.comando, "/salir") == 0) {
 
                 eliminar_usuario_bin(cliente->nombre);
                 eliminar_usuario_txt(cliente->nombre);

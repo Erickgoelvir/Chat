@@ -8,4 +8,7 @@ add_executable(servidor src/servidor.c
                 src/headers/funciones_servidor.h
 )
 
-add_executable(cliente src/cliente.c)
+add_executable(cliente src/cliente.c
+                src/funciones_servidor.c
+                src/headers/funciones_servidor.h
+)
