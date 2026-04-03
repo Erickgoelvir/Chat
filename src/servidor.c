@@ -32,14 +32,13 @@ int main(void) {
     //Inicializar SIGINT para salir con ctrl+c
     signal(SIGINT, manejar_sigint);
 
-    //Abrir usuarios.txt (aun viendo si lo necesito)
+    //iniciar variable Detener
+    detener = 1;
 
-    //Crear los mutex candados
-    // pthread_mutex_t bloquear_txt = PTHREAD_MUTEX_INITIALIZER;
-    // pthread_mutex_t bloquear_bin = PTHREAD_MUTEX_INITIALIZER;
-    // pthread_mutex_t bloquear_fifo = PTHREAD_MUTEX_INITIALIZER;
-    //Los declare en funciones_servidor, si funciona eliminar este bloque
-
+    //Bajo ninguna circunstancia tocar esta variable, hace cosas importantes
+    int i = 0;
+    pthread_t hilos[100];
+    int id[100];
 
     //Crear PIPE
     int fd[2];
@@ -54,19 +53,23 @@ int main(void) {
 
         close(fd[0]);
 
+        //Asegurarse de que el FIFO no exista antes
+        unlink("../data/login/login_requests");
+
         //Crear y abri FIFO de login (común para todos los clientes)
         if (mkfifo("../data/login/login_requests", 0666) == -1) {perror("Error makefifo\n"); return 1;}
-        int login_request = open("../data/login/login_requests", O_RDONLY);
+        int login_request = open("../data/login/login_requests", O_RDONLY  | O_NONBLOCK);
         if (login_request == -1) {perror("Error al abrir login_requests\n"); return 1;}
 
+        printf("[PORTERO] Esperando conexiones...\n");
+
         //Hilos
-        int n = 100;
-        pthread_t hilos[n];
-        int ids[n];
-        int i = 0;
+        pthread_t hilos_login[100];
+        int ids[100];
+        int j = 0; //control de hilos creados por login
 
         //SEGUIR CON EL PROCESO DE LOGIN LA INFO ESTA EN EL DIAGRAMA, HAY FUNCIONES UTILES PARA USAR AQUÍ EN EL ARCHIVO DE FUNCIONES_SERVIDOR
-        // while (detener) {
+        // while (running) {
         //     datos_login datos_login;
         //     read(login_request, &datos_login, sizeof(datos_login));
         //
@@ -74,6 +77,9 @@ int main(void) {
         //
         //     i++;
         // }
+
+        close(login_request);
+        unlink("../data/login/login_requests");
 
     } //Fin Proceso Hijo, Login
 
@@ -113,6 +119,7 @@ int main(void) {
     eliminar_fifos();
 
     //Esperando al proceso hijo
+    //kill(pid, SIGTERM); No se
     waitpid(pid, NULL, 0);
 
     //Destruir mutex
@@ -124,12 +131,12 @@ int main(void) {
     actualizar_estado(0);
 
     //Limpiar archivos de registro de usuarios
-    FILE *usuarion_bin = fopen("../data/usuarios.bin", "wb");
+    FILE *usuarios_bin = fopen("../data/usuarios.bin", "wb");
     FILE *usuarios_txt = fopen("../data/usuarios.txt", "w");
-    if (usuarion_bin == NULL || usuarios_txt == NULL) {
+    if (usuarios_bin == NULL || usuarios_txt == NULL) {
         perror("Error al abrir usuarios\n");
     } else {
-        fclose(usuarion_bin);
+        fclose(usuarios_bin);
         fclose(usuarios_txt);
     }
 

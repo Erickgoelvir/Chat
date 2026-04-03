@@ -11,7 +11,7 @@ int main(void) {
     int estado_servidor = is_server_run();
     if (estado_servidor != 1) {
         printf("SERVIDOR NO INICIADO\n");
-        return 0;
+        return 1;
     }
 
     printf("BIENVENIDO\n");
@@ -24,12 +24,12 @@ int main(void) {
 
 int is_server_run() {
 
-    //IMPORTANTE: prueba que el proceso servidor esta en ejecucion
+    //IMPORTANTE: prueba que el proceso servidor está en ejecución
 
     FILE *status = fopen("../data/server_status.log", "rb");
     if (status == NULL) {perror("error al abrir"); return 1;}
     int buffer;
-    fread(&buffer, sizeof(char), sizeof(buffer)-1, status);
+    fread(&buffer, sizeof(int), sizeof(buffer), status);
     fclose(status);
     return buffer;
 

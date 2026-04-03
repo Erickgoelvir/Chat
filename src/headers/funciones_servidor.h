@@ -29,32 +29,30 @@ void manejar_sigint(int sig);
 void actualizar_estado(int);
 
 //Variable para detener los hilos y proceso hijo
-int detener = 1;
+extern int detener;
 
 
 //Function obtener fecha y hora
 char* obtener_fecha();
 
 //Variables Globales MUTEX, Funciones que las usan
-pthread_mutex_t bloquear_txt;
-pthread_mutex_t bloquear_bin;
-pthread_mutex_t bloquear_fifo;
+extern pthread_mutex_t bloquear_txt;
+extern pthread_mutex_t bloquear_bin;
+extern pthread_mutex_t bloquear_fifo;
 
 void inicializar_archivo_bin();
 void escribir_txt(char *direccion, char *mensaje);
 void escribir_bin(datos_login datos);
 void eliminar_usuario_txt (const char *nombre_borrar);
 void eliminar_usuario_bin(const char *nombre_borrar);
-void escribir_fifo(int pid, char *mensaje);
+void escribir_fifo(int pid, const char *mensaje);
 
 //Function controladora de los hilos que atienden al usuario
 void* atender_cliente(void *arg);
 
 //numero de hilos creados para atender a usuarios
-int i = 0;
-int n = 100;
-pthread_t hilos[n];
-int id[n];
+extern pthread_t hilos[];
+extern int id[];
 
 //Mensaje de salida
 void mensaje_salida();

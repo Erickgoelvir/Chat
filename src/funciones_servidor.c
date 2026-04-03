@@ -117,7 +117,7 @@ void eliminar_usuario_bin(const char *nombre_borrar) {
 
     while (fread(&registro, sizeof(registro), 1, archivo)) {
         if (!strcmp(registro.nombre, nombre_borrar)) {
-            fseek(archivo, -sizeof(registro), SEEK_CUR);
+            fseek(archivo, -(long)sizeof(registro), SEEK_CUR);
             fwrite(&vacio, sizeof(vacio), 1, archivo);
             break;
         }
@@ -127,7 +127,7 @@ void eliminar_usuario_bin(const char *nombre_borrar) {
     pthread_mutex_unlock(&bloquear_bin);
 }
 
-void escribir_fifo(const int pid, const char mensaje) {
+void escribir_fifo(const int pid, const char *mensaje) {
     pthread_mutex_lock(&bloquear_fifo);
     char direccion[50];
     snprintf(direccion, sizeof(direccion), "../data/inbox/cliente%d", pid);
@@ -157,6 +157,7 @@ void *atender_cliente(void *arg) {
     if (!usuarios) {perror("Error al abrir archivo de usuarios\n"); return NULL;}
 
     while (detener) {
+        rewind(usuarios);
         ssize_t n = read(fd, &operacion, sizeof(datos_operacion));
         if (n > 0) {
 
@@ -241,6 +242,7 @@ void mensaje_salida() {
     escribir_txt("../data/chat.log", mensaje);
 
     FILE * usuarios = fopen("../data/usuarios.bin", "rb");
+    if (!usuarios) {perror("Archivo usuarios no encontrado\n"); return;}
     while (fread(&registro, sizeof(datos_login), 1, usuarios) == 1) {
         escribir_fifo(registro.pid, mensaje);
     }
@@ -257,12 +259,12 @@ void eliminar_fifos() {
 
     FILE * usuarios = fopen("../data/usuarios.bin", "rb");
     while (fread(&registro, sizeof(datos_login), 1, usuarios) == 1) {
-        snprintf(path_inbox, sizeof(path_inbox), "../data/outbox/cliente%d", registro.pid);
+        snprintf(path_outbox, sizeof(path_outbox), "../data/outbox/cliente%d", registro.pid);
         snprintf(path_inbox, sizeof(path_inbox), "../data/inbox/cliente%d", registro.pid);
-        if (unlink(path_inbox) == 0 && unlink(path_outbox) == -1) {
+        if (unlink(path_inbox) == -1 || unlink(path_outbox) == -1) {
             perror("Error al eliminar archivos\n");
         } else {
-            printf("Archivos eliminados");
+            printf("Archivos eliminados\n");
         }
     }
 
