@@ -21,10 +21,6 @@ typedef struct {
     char mensaje[50];
 } datos_operacion;
 
-//Manejar el SIGINT
-extern volatile sig_atomic_t running;
-void manejar_sigint(int sig);
-
 //Actualizar estado del servidor
 void actualizar_estado(int);
 
@@ -43,6 +39,7 @@ void escribir_bin(datos_login datos);
 void eliminar_usuario_txt (const char *nombre_borrar);
 void eliminar_usuario_bin(const char *nombre_borrar);
 void escribir_fifo(int pid, const char *mensaje);
+int ver_existencia_usuario(const char *nombre_buscar);
 
 //Function controladora de los hilos que atienden al usuario
 void* atender_cliente(void *arg);

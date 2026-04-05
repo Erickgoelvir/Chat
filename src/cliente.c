@@ -37,7 +37,7 @@ int main(void) {
 
     int fd_login = open("../data/login/login_requests", O_WRONLY);
     if (fd_login == -1) {
-        perror("El servidor no acepta conexiones");
+        perror("El servidor no acepta conexiones\n");
         return 1;
     }
 
@@ -46,19 +46,33 @@ int main(void) {
         printf("Ingrese su nombre: ");
         if (scanf(" %19s", yo.nombre) != 1) { return 1; }
 
-        write(fd_login, &yo, sizeof(datos_login));
+        char ruta_confirmacion[50];
+        snprintf(ruta_confirmacion, sizeof(ruta_confirmacion), "../data/login/confirmacion%d", yo.pid);
 
-        sleep(2);
-        int confirmacion = open("../data/login/confirmacion", O_RDONLY);
-        sleep(1);
-
-        if (confirmacion == 0) {
-            printf("Error: El nombre '%s' ya esta en uso. Intente otro.\n", yo.nombre);
-        } else {
-            nombre_valido = 1;
+        if (mkfifo(ruta_confirmacion, 0666) == -1) {
+            perror("Error al crear FIFO de confirmacion");
+            return 1;
         }
 
-        close(confirmacion);
+        write(fd_login, &yo, sizeof(datos_login));
+
+        int confirmacion = open(ruta_confirmacion, O_RDONLY);
+
+        if (confirmacion == -1) {
+            printf("Error al recibir confirmation del servidor.\n");
+        } else {
+
+            int resp = 0;
+            read(confirmacion, &resp, sizeof(resp));
+            if (resp == 1) {
+                // resp==1 significa usuario ya existe
+                printf("Error: El nombre '%s' ya esta en uso. Intente otro.\n", yo.nombre);
+            } else {
+                nombre_valido = 1;
+            }
+            close(confirmacion);
+            unlink(ruta_confirmacion);
+        }
     }
     close(fd_login);
 
@@ -186,12 +200,13 @@ void *leer_inbox(void *arg) {
     snprintf(ruta, sizeof(ruta), "../data/inbox/cliente%d", pid);
 
     int f = open(ruta, O_RDONLY);
-    if (!f) return;
+    if (f == -1) return NULL;
     char mensaje[100];
 
     while (corriendo) {
-        ssize_t n = read(f, &mensaje, sizeof(mensaje));
+        ssize_t n = read(f, &mensaje, sizeof(mensaje) -1);
         if (n > 0) {
+            mensaje[n] = '\0';
             if (strcmp(mensaje, "[Servidor] Apagando el sistema\n") == 0) {
                 corriendo = 0;
             }
@@ -200,5 +215,6 @@ void *leer_inbox(void *arg) {
     }
 
     close(f);
+    return NULL;
 
 }

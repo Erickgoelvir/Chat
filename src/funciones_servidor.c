@@ -14,12 +14,6 @@ pthread_mutex_t bloquear_txt = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t bloquear_bin = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t bloquear_fifo = PTHREAD_MUTEX_INITIALIZER;
 
-//MANEJAR EL SIGINT Y APAGADO DEL SERVIDOR
-volatile sig_atomic_t running = 1;
-void manejar_sigint(int sig) {
-    running = 0;
-}
-
 //ACTUALIZAR EL ESTADO [ON/OFF] DEL SERVIDOR
 void actualizar_estado(int estado) {
 
@@ -59,9 +53,17 @@ void inicializar_archivo_bin() {
 
 void escribir_bin(const datos_login datos) {
     pthread_mutex_lock(&bloquear_bin);
-    FILE *archivo = fopen("../data/usuarios.bin", "ab");
+    // Buscar el primer slot vacío (pid == 0) y escribir ahí
+    FILE *archivo = fopen("../data/usuarios.bin", "r+b");
     if (archivo != NULL) {
-        fwrite(&datos, sizeof(datos_login), 1, archivo);
+        datos_login registro;
+        while (fread(&registro, sizeof(datos_login), 1, archivo) == 1) {
+            if (registro.pid == 0) {
+                fseek(archivo, -(long)sizeof(datos_login), SEEK_CUR);
+                fwrite(&datos, sizeof(datos_login), 1, archivo);
+                break;
+            }
+        }
         fclose(archivo);
     }
     pthread_mutex_unlock(&bloquear_bin);
@@ -137,9 +139,8 @@ void escribir_fifo(const int pid, const char *mensaje) {
         perror("Error al abrir archivo\n");
     } else {
         write(fd, mensaje, strlen(mensaje));
+        close(fd);  // FIX: solo cerrar si open fue exitoso
     }
-
-    close(fd);
 
     pthread_mutex_unlock(&bloquear_fifo);
 }
@@ -169,16 +170,24 @@ void *atender_cliente(void *arg) {
             if (strcmp(operacion.comando, "/usuarios") == 0) {
 
                 datos_login registro;
-                char buffer[1024];
-                buffer[0] = '\0';
+                char buffer[2200];
+                size_t offset = 0;
 
                 while (fread(&registro, sizeof(datos_login), 1, usuarios) == 1) {
-                    strcat(buffer, registro.nombre);
-                    strcat(buffer, "\n");
+                    if (registro.pid == 0) continue;
+                    size_t len = strlen(registro.nombre);
+                    if (offset + len + 2 < sizeof(buffer)) {
+                        memcpy(buffer + offset, registro.nombre, len);
+                        offset += len;
+                        buffer[offset++] = '\n';
+                        buffer[offset] = '\0';
+                    }
                 }
+                if (offset == 0) strncpy(buffer, "(ninguno conectado)\n", sizeof(buffer)-1);
                 escribir_fifo(cliente->pid, buffer);
+            }
 
-            } else if (strcmp(operacion.comando, "/privado") == 0) {
+            else if (strcmp(operacion.comando, "/privado") == 0) {
 
                 datos_login registro;
                 pid_t pid_encontrado = -1;
@@ -197,7 +206,11 @@ void *atender_cliente(void *arg) {
                 snprintf(mensaje, sizeof(mensaje), "[%s] %s\n", operacion.emisor, operacion.mensaje);
 
                 if (pid_encontrado == -1) {
-                    printf("No se envio el mensaje de %s a %s. Nadie se va a dar cuenta\n", operacion.emisor, operacion.receptor);
+
+                    char aviso[100];
+                    snprintf(aviso, sizeof(aviso), "[SERVIDOR] '%s' no conectado.\n", operacion.receptor);
+                    escribir_fifo(cliente->pid, aviso);
+
                 } else {
                     escribir_fifo(pid_encontrado, mensaje);
                     escribir_txt("../data/chat.log", mensaje);
@@ -262,8 +275,12 @@ void eliminar_fifos() {
     char path_inbox[50];
     char path_outbox[50];
 
-    FILE * usuarios = fopen("../data/usuarios.bin", "rb");
+    FILE *usuarios = fopen("../data/usuarios.bin", "rb");
+    if (!usuarios) {perror("Error al abrir usuarios.bin en eliminar_fifos\n");}
+
     while (fread(&registro, sizeof(datos_login), 1, usuarios) == 1) {
+        if (registro.pid == 0) continue;
+
         snprintf(path_outbox, sizeof(path_outbox), "../data/outbox/cliente%d", registro.pid);
         snprintf(path_inbox, sizeof(path_inbox), "../data/inbox/cliente%d", registro.pid);
         if (unlink(path_inbox) == -1 || unlink(path_outbox) == -1) {
@@ -277,15 +294,36 @@ void eliminar_fifos() {
 
 }
 
+// ── Verificar si un usuario ya existe en usuarios.bin ────────────
+int ver_existencia_usuario(const char *nombre_buscar) {
+    FILE *archivo = fopen("../data/usuarios.bin", "rb");
+    if (!archivo) return 0;
+
+    datos_login registro;
+    int encontrado = 0;
+    while (fread(&registro, sizeof(datos_login), 1, archivo) == 1) {
+        if (registro.pid != 0 && strcmp(registro.nombre, nombre_buscar) == 0) {
+            encontrado = 1;
+            break;
+        }
+    }
+    fclose(archivo);
+    return encontrado;
+}
+
 //FUNCTION PARA DEVOLVER FECHA Y HORA (Para los logs)
 char* obtener_fecha() {
+    pthread_mutex_lock(&bloquear_txt);
 
     time_t ahora = time(NULL);
-    struct tm * t = localtime(&ahora);
+    struct tm resultado;
+    struct tm * t = localtime_r(&ahora, &resultado);
 
     static char fecha[50];
     strftime(fecha, sizeof(fecha), "%d-%m-%y_%H:%M:%S", t);
-    return fecha;
 
+    pthread_mutex_unlock(&bloquear_txt);
+
+    return fecha;
 }
 

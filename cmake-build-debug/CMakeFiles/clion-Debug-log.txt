@@ -1,4 +1,4 @@
 /home/erick/.local/share/clion-2025.1/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/erick/.local/share/clion-2025.1/bin/ninja/linux/x64/ninja -G Ninja -S /home/erick/Proyectos/chat -B /home/erick/Proyectos/chat/cmake-build-debug
--- Configuring done (0.3s)
--- Generating done (0.1s)
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
 -- Build files have been written to: /home/erick/Proyectos/chat/cmake-build-debug
